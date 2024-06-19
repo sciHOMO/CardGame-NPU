@@ -145,13 +145,11 @@ void ACard_PlayerController::Attack_Implementation(ACard_Info* CardInfo, ACard_I
 		return;
 	}
 	CardInfo -> CardShape -> Attack(TargetCardInfo -> CardShape -> GetActorLocation());	//播放动画
-	FTimerDelegate Delegate;
-	Delegate.BindUFunction(this, "Attack_NoAnim", CardInfo, TargetCardInfo, IsMainPlayer);
-	FTimerHandle Handle;
-	GetWorldTimerManager().SetTimer(Handle, Delegate, 0.5F, false);	//动画结束处理逻辑
+	Delegate.BindUFunction(this, "Attack_Arch", CardInfo, TargetCardInfo, IsMainPlayer);
+	GetWorldTimerManager().SetTimer(Handle, Delegate, 1000.0F, false);	//动画结束处理逻辑
 }
 
-void ACard_PlayerController::Attack_NoAnim(ACard_Info* CardInfo, ACard_Info* TargetCardInfo, bool IsMainPlayer)
+void ACard_PlayerController::Attack_Arch(ACard_Info* CardInfo, ACard_Info* TargetCardInfo, bool IsMainPlayer)
 {
 	Cast<ACard_GameStateBase>(UGameplayStatics::GetGameState(this)) -> Attack(CardInfo, TargetCardInfo, IsMainPlayer);
 }
@@ -201,15 +199,25 @@ void ACard_PlayerController::AttackDirectly_Implementation(ACard_Info* CardInfo,
 		return;
 	}
 	CardInfo -> CardShape -> Attack(Location);
-	FTimerDelegate Delegate;
-	Delegate.BindUFunction(this, "AttackDirectly_NoAnim", CardInfo, Location, IsMainPlayer);
-	FTimerHandle Handle;
-	GetWorldTimerManager().SetTimer(Handle, Delegate, 0.5F, false);
+	Delegate.BindUFunction(this, "AttackDirectly_Arch", CardInfo, Location, IsMainPlayer);
+	GetWorldTimerManager().SetTimer(Handle, Delegate, 1000.0F, false);
 }
 
-void ACard_PlayerController::AttackDirectly_NoAnim(ACard_Info* CardInfo, FVector Location, bool IsMainPlayer)
+void ACard_PlayerController::AttackDirectly_Arch(ACard_Info* CardInfo, FVector Location, bool IsMainPlayer)
 {
 	Cast<ACard_GameStateBase>(UGameplayStatics::GetGameState(this)) -> AttackDirectly(CardInfo, IsMainPlayer);
+}
+
+void ACard_PlayerController::AttackAnimCallBack_Implementation()
+{
+	bool A = Delegate.ExecuteIfBound();
+	Delegate.Unbind();
+	Handle.Invalidate();
+}
+
+void ACard_PlayerController::NewFocusCard_Implementation(ACard_Info* CardInfo)
+{
+	BaseWidget;
 }
 
 void ACard_PlayerController::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const

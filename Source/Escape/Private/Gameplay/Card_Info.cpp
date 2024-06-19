@@ -51,5 +51,7 @@ void ACard_Info::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLife
 	DOREPLIFETIME(ACard_Info, CardPos);
 	DOREPLIFETIME(ACard_Info, CardLastPos);
 	DOREPLIFETIME(ACard_Info, CardType);
+	DOREPLIFETIME(ACard_Info, CardBuff);
+	DOREPLIFETIME(ACard_Info, CardEffect);
 	DOREPLIFETIME(ACard_Info, StandUp);
 };

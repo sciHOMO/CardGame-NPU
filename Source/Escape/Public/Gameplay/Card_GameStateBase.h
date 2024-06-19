@@ -10,6 +10,7 @@
 
 class ACard_Info;
 class ACard_ShapeManager;
+class ACard_EffectSolver;
 
 DECLARE_DELEGATE_OneParam(FDelegate, float)
 
@@ -74,6 +75,9 @@ class ESCAPE_API ACard_GameStateBase : public AGameStateBase
 
 	UPROPERTY()
 	ACard_ShapeManager* ShapeManager;
+
+	UPROPERTY()
+	ACard_EffectSolver* EffectSolver;
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated, Category="Turn")
 	bool Player_Turn = true;	//谁的回合，主玩家=true

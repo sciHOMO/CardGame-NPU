@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Card_Info.h"
 #include "GameFramework/PlayerController.h"
 #include "Card_PlayerController.generated.h"
 
@@ -22,6 +23,9 @@ public:
 
 	virtual void BeginPlay() override;
 
+	FTimerDelegate Delegate;
+	FTimerHandle Handle;
+
 	UFUNCTION(Reliable, NetMulticast)
 	void GenerateDesk();
 
@@ -35,13 +39,19 @@ public:
 	void Attack(ACard_Info* CardInfo, ACard_Info* TargetCardInfo, bool IsMainPlayer);
 
 	UFUNCTION()
-	void Attack_NoAnim(ACard_Info* CardInfo, ACard_Info* TargetCardInfo, bool IsMainPlayer); //动画结束回调
+	void Attack_Arch(ACard_Info* CardInfo, ACard_Info* TargetCardInfo, bool IsMainPlayer); //动画结束回调
 	
 	UFUNCTION(BlueprintCallable, Reliable, Server)
 	void AttackDirectly(ACard_Info* CardInfo, FVector Location, bool IsMainPlayer);
 
 	UFUNCTION()
-	void AttackDirectly_NoAnim(ACard_Info* CardInfo, FVector Location, bool IsMainPlayer);	//动画结束回调
+	void AttackDirectly_Arch(ACard_Info* CardInfo, FVector Location, bool IsMainPlayer);	//动画结束回调
+	
+	UFUNCTION(BlueprintCallable, Reliable, Server)
+	void AttackAnimCallBack();
+
+	UFUNCTION(Reliable, Client)
+	void NewFocusCard(ACard_Info* CardInfo);	//那些新登场的卡牌会临时刷新到关注区
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UMG")	//UMG引用
 	UUserWidget* BaseWidget;

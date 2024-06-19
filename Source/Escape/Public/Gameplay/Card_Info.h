@@ -11,6 +11,25 @@
 class ACard_GameStateBase;
 class ACard_Shape;
 
+UENUM(BlueprintType)	//四大阶段
+enum class E_EffectTimer : uint8
+{
+	OnUse,
+	OnAnotherUse,
+	OnAttack,
+	OnAnotherAttack
+};
+
+USTRUCT(BlueprintType)
+struct FCardEffect
+{
+	GENERATED_BODY();
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
+	E_EffectTimer EffectTimer;
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
+	int EffectID;
+};
+
 UCLASS()
 class ESCAPE_API ACard_Info : public AActor
 {
@@ -45,6 +64,9 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated)
 	TArray<E_Buff> CardBuff;
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated)
+	TArray<FCardEffect> CardEffect;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated)
 	FString Path = TEXT(""); //卡牌类路径

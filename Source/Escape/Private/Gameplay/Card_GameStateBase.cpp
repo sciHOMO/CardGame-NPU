@@ -3,6 +3,7 @@
 #include "Gameplay/Card_GameStateBase.h"
 #include "GameFramework/PlayerState.h"
 #include "Gameplay/Card_Character.h"
+#include "Gameplay/Card_EffectSolver.h"
 #include "Gameplay/Card_Info.h"
 #include "Gameplay/Card_ShapeManager.h"
 #include "Gameplay/Card_PlayerController.h"
@@ -13,6 +14,7 @@ ACard_GameStateBase::ACard_GameStateBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	ShapeManager = Cast<ACard_ShapeManager>(UGameplayStatics::GetActorOfClass(this, ACard_ShapeManager::StaticClass()));	//初始化场地管理类方便引用
+	EffectSolver = Cast<ACard_EffectSolver>(UGameplayStatics::GetActorOfClass(this, ACard_ShapeManager::StaticClass()));	//初始化效果结算器方便引用
 }
 
 void ACard_GameStateBase::BeginPlay()
