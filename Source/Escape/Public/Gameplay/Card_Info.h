@@ -24,10 +24,12 @@ USTRUCT(BlueprintType)
 struct FCardEffect
 {
 	GENERATED_BODY();
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	E_EffectTimer EffectTimer;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int EffectID;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	bool Quick;
 };
 
 UCLASS()
@@ -65,7 +67,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated)
 	TArray<E_Buff> CardBuff;
 
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated)
 	TArray<FCardEffect> CardEffect;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated)

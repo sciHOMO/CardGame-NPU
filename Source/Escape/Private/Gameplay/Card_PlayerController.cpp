@@ -8,6 +8,11 @@
 #include "Gameplay/Card_ShapeManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "UMG/BaseWidget.h"
+#include "UMG/WaitForEffectWidget.h"
+#include "UMG/WaitForResponseWidget.h"
+
+class UBaseWidget;
 
 ACard_PlayerController::ACard_PlayerController()
 {
@@ -28,10 +33,10 @@ void ACard_PlayerController::BeginPlay()
 			{
 				return;
 			}
-			BaseWidget = CreateWidget<UUserWidget>(this, WidgetClass, "BaseWidget");
+			BaseWidget = CreateWidget<UBaseWidget>(this, WidgetClass, "BaseWidget");
 			if (BaseWidget)
 			{
-				BaseWidget->AddToViewport();
+				BaseWidget -> AddToViewport();
 			}
 		}
 	} //生成UMG
@@ -68,8 +73,26 @@ void ACard_PlayerController::PlayCard_Grave_Implementation(ACard_Info* CardInfo,
 		CardInfo -> Cancel();	//法力不足，取消
 		return;
 	}
+	if (CardInfo -> CardType != E_Type::Spell)
+	{
+		CardInfo -> Cancel();	//生物，取消
+		return;
+	}
+	if (GSB -> LockUp)
+	{
+		CardInfo -> Cancel();
+		return;
+	}
 	if (GSB -> Phase != E_Phase::Main)
 	{
+		for (auto &i : CardInfo -> CardEffect)
+		{
+			if (i.EffectTimer == E_EffectTimer::OnUse && i.Quick == true)
+			{
+				Cast<ACard_GameStateBase>(UGameplayStatics::GetGameState(this)) -> PlayCard_Grave(CardInfo, IsMainPlayer);
+				return;
+			}
+		}
 		CardInfo -> Cancel();	//阶段错误，取消
 		return;
 	}
@@ -110,6 +133,21 @@ void ACard_PlayerController::PlayCard_Spawn_Implementation(ACard_Info* CardInfo,
 		return;
 	}
 	if (GSB -> Phase != E_Phase::Main)
+	{
+		CardInfo -> Cancel();
+		return;
+	}
+	if (CardInfo -> CardType != E_Type::Creature)
+	{
+		CardInfo -> Cancel();
+		return;
+	}
+	if (GSB -> Player_Turn != IsMainPlayer)
+	{
+		CardInfo -> Cancel();
+		return;
+	}
+	if (GSB -> LockUp)
 	{
 		CardInfo -> Cancel();
 		return;
@@ -213,6 +251,40 @@ void ACard_PlayerController::AttackAnimCallBack_Implementation()
 	bool A = Delegate.ExecuteIfBound();
 	Delegate.Unbind();
 	Handle.Invalidate();
+}
+
+void ACard_PlayerController::WaitForEffect_UMG_Implementation(ACard_Info* CardInfo, int EffectID)
+{
+	if (IsLocalPlayerController())
+	{
+		UClass* WidgetClass = LoadClass<UUserWidget>(NULL, TEXT("WidgetBlueprint'/Game/UMG/UMG_WaitforEffect.UMG_WaitforEffect_C'"));
+			if (!IsValid(WidgetClass))
+			{
+				return;
+			}
+		if (UWaitForEffectWidget* WaitForEffect = CreateWidget<UWaitForEffectWidget>(this, WidgetClass, "WaitForEffect"))
+			{
+				WaitForEffect -> CardInfo = CardInfo;
+				WaitForEffect -> EffectID = EffectID;
+				WaitForEffect -> AddToViewport();
+			}
+	} 
+}
+
+void ACard_PlayerController::WaitForResponse_UMG_Implementation()
+{
+	if (IsLocalPlayerController())
+	{
+		UClass* WidgetClass = LoadClass<UUserWidget>(NULL, TEXT("WidgetBlueprint'/Game/UMG/UMG_WaitforResponse.UMG_WaitforResponse_C'"));
+		if (!IsValid(WidgetClass))
+		{
+			return;
+		}
+		if (UWaitForResponseWidget* WaitForResponse = CreateWidget<UWaitForResponseWidget>(this, WidgetClass, "WaitForResponse"))
+		{
+			WaitForResponse -> AddToViewport();
+		}
+	} 
 }
 
 void ACard_PlayerController::NewFocusCard_Implementation(ACard_Info* CardInfo)

@@ -90,15 +90,17 @@ class ESCAPE_API ACard_GameStateBase : public AGameStateBase
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated, Category="Turn")
 	int TurnCount = 1;	//回合数
-	
+
 	UFUNCTION(BlueprintCallable, Reliable, Server, Category="Turn")
-	void React();	//响应计时器轮转
+	void React(bool Reset);	//响应计时器轮转
+
+	float TurnTime = 300.0F;
+	
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated, Category="Turn")
+	float Player_1_Time = TurnTime;
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated, Category="Turn")
-	float Player_1_Time = 120.0f;
-
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated, Category="Turn")
-	float Player_2_Time = 120.0f;
+	float Player_2_Time = TurnTime;
 
 	UFUNCTION(Category="Turn")
 	void Player_1_Time_Consume(float DeltaTime);
@@ -189,5 +191,19 @@ class ESCAPE_API ACard_GameStateBase : public AGameStateBase
 
 	UFUNCTION(BlueprintCallable, Reliable, Server, Category="Logic")
 	void Win(bool IsMainPlayer);	//获得胜利
-	
+
+	UFUNCTION(BlueprintCallable, Reliable, Server, Category="Logic")
+	void WaitForEffect(ACard_Info* Source, int EffectID, bool IsMainPlayer);	//获得胜利
+
+	UFUNCTION(BlueprintCallable, Reliable, Server, Category="Logic")
+	void WaitForEffectCallBack(const TArray<ACard_Info*>& Source, int EffectID);
+
+	UFUNCTION(BlueprintCallable, Reliable, Server, Category="Logic")
+	void WaitForResponse(bool IsMainPlayer);	//等待响应
+
+	UFUNCTION(BlueprintCallable, Reliable, Server, Category="Logic")
+	void WaitForResponseCallBack();		//响应取消
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated, Category="Turn")
+	bool LockUp = false;
 };

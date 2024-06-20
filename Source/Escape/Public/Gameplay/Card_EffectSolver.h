@@ -41,8 +41,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SolveStack()
 	{
-		Stack.Last().Execute();
-		Stack.Pop();
+		//Stack.Last().Execute();
+		//Stack.Pop();
+		//if (Stack.Num() == 0)
+		//{
+		//	InStack = false;
+		//}
+		Stack.Empty();
+		InStack = false;
 	}
 
 	UFUNCTION()
@@ -50,4 +56,11 @@ public:
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Happens")));;
 	}
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated)
+	bool InStack = false;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated)
+	bool Primary;
+	
 };

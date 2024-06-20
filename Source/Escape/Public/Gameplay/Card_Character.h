@@ -26,9 +26,15 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UFUNCTION(BlueprintCallable, Unreliable, Server)
+	UFUNCTION(BlueprintCallable, Reliable, Server)
 	void NextPhase_Cha();
-
+	
+	UFUNCTION(BlueprintCallable, Reliable, Server)
+	void WaitForEffect_CallBack(const TArray<ACard_Info*>& Targets, int EffectID);
+	
+	UFUNCTION(BlueprintCallable, Reliable, Server)
+	void WaitForResponse_CallBack();
+	
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated)
 	bool IsControl = true;
 };

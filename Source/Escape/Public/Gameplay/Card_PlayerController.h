@@ -8,6 +8,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Card_PlayerController.generated.h"
 
+class UBaseWidget;
+
 /**
  * 
  */
@@ -51,10 +53,16 @@ public:
 	void AttackAnimCallBack();
 
 	UFUNCTION(Reliable, Client)
+	void WaitForEffect_UMG(ACard_Info* CardInfo, int EffectID);
+
+	UFUNCTION(Reliable, Client)
+	void WaitForResponse_UMG();
+	
+	UFUNCTION(Reliable, Client)
 	void NewFocusCard(ACard_Info* CardInfo);	//那些新登场的卡牌会临时刷新到关注区
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UMG")	//UMG引用
-	UUserWidget* BaseWidget;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UMG")	
+	UBaseWidget* BaseWidget;	//UMG引用
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated)
 	bool MainPlayer = false;

@@ -44,6 +44,18 @@ void ACard_Character::NextPhase_Cha_Implementation()
 	}
 }
 
+void ACard_Character::WaitForEffect_CallBack_Implementation(const TArray<ACard_Info*>& Targets, int EffectID)
+{
+	ACard_GameStateBase* GSB = Cast<ACard_GameStateBase>(UGameplayStatics::GetGameState(this));
+	GSB -> WaitForEffectCallBack(Targets, EffectID);
+}
+
+void ACard_Character::WaitForResponse_CallBack_Implementation()
+{
+	ACard_GameStateBase* GSB = Cast<ACard_GameStateBase>(UGameplayStatics::GetGameState(this));
+	GSB -> WaitForResponseCallBack();
+}
+
 void ACard_Character::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

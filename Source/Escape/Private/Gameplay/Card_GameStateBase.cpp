@@ -14,7 +14,7 @@ ACard_GameStateBase::ACard_GameStateBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	ShapeManager = Cast<ACard_ShapeManager>(UGameplayStatics::GetActorOfClass(this, ACard_ShapeManager::StaticClass()));	//初始化场地管理类方便引用
-	EffectSolver = Cast<ACard_EffectSolver>(UGameplayStatics::GetActorOfClass(this, ACard_ShapeManager::StaticClass()));	//初始化效果结算器方便引用
+	EffectSolver = Cast<ACard_EffectSolver>(UGameplayStatics::GetActorOfClass(this, ACard_EffectSolver::StaticClass()));	//初始化效果结算器方便引用
 }
 
 void ACard_GameStateBase::BeginPlay()
@@ -36,7 +36,7 @@ void ACard_GameStateBase::InitTurn_Implementation()
 	Cast<ACard_Character>(PlayerArray[1] -> GetPawn()) -> IsControl = false;
 	GenerateDesk(0);
 	GenerateDesk(1);
-	React();
+	React(false);
 	DrawCard(0, 5);
 	DrawCard(1, 5);	//抽五张
 }
@@ -46,27 +46,41 @@ void ACard_GameStateBase::Turn_Implementation()
 	TurnCount++;	//增加回合计数
 	Player_Turn = !Player_Turn;	//重置倒计时和法力
 	Player_Turn ? Player_1_Mana = 10 : Player_2_Mana = 10;
-	Player_1_Time = 120.0F;
-	Player_2_Time = 120.0F;
+	Player_1_Time = TurnTime;
+	Player_2_Time = TurnTime;
 	Phase = E_Phase::Prepare;
 	if (PlayerArray.Num() == 2)
 	{
 		Cast<ACard_Character>(PlayerArray[0]->GetPawn())->IsControl = !Cast<ACard_Character>(PlayerArray[0]->GetPawn())->IsControl;
 		Cast<ACard_Character>(PlayerArray[1]->GetPawn())->IsControl = !Cast<ACard_Character>(PlayerArray[1]->GetPawn())->IsControl;
 	}
-	React();
+	React(false);
 	DrawCard(Player_Turn ? 0 : 1, 1); //回合玩家抽一
 }
 
-void ACard_GameStateBase::React_Implementation()
+void ACard_GameStateBase::React_Implementation(bool Reset)
 {
-	Player_Time.Unbind();	//主控消耗倒计时
-	if(Player_Turn)
+	//主控消耗倒计时
+	if (Reset)
 	{
+		Player_Time.Unbind();
+		Player_Turn ? Player_Time.BindUFunction(this, "Player_1_Time_Consume") : Player_Time.BindUFunction(this, "Player_2_Time_Consume");
+		return;
+	}
+	if(Player_Time.TryGetBoundFunctionName() != "Player_1_Time_Consume" && Player_Time.TryGetBoundFunctionName() != "Player_2_Time_Consume")
+	{
+		Player_Time.Unbind();
+		Player_Time.BindUFunction(this, "Player_1_Time_Consume");
+		return;
+	}
+	if(Player_Time.TryGetBoundFunctionName() == "Player_2_Time_Consume")
+	{
+		Player_Time.Unbind();
 		Player_Time.BindUFunction(this, "Player_1_Time_Consume");
 	}
 	else
 	{
+		Player_Time.Unbind();
 		Player_Time.BindUFunction(this, "Player_2_Time_Consume");
 	}
 }
@@ -163,6 +177,19 @@ void ACard_GameStateBase::PlayCard_Grave_Implementation(ACard_Info* CardInfo, bo
 	IsMainPlayer ? Player_1_Mana = Player_1_Mana - CardInfo -> Cost : Player_2_Mana = Player_2_Mana - CardInfo -> Cost;
 	ShapeManager -> RemoveFromHand(CardInfo, IsMainPlayer);	//移出手牌（显示层面的）
 	ShapeManager -> SendtoGrave(CardInfo); //送墓
+	if (!EffectSolver -> InStack)
+	{
+		EffectSolver -> InStack = true;
+		EffectSolver -> Primary = IsMainPlayer;
+	}
+	for (auto &i : CardInfo -> CardEffect)	//叫效果，UI取对象
+	{
+		if (i.EffectTimer == E_EffectTimer::OnUse)
+		{
+			LockUp = true; //阻止继续出牌
+			WaitForEffect(CardInfo, i.EffectID, IsMainPlayer);
+		}
+	}
 }
 
 void ACard_GameStateBase::PlayCard_Spawn_Implementation(ACard_Info* CardInfo, ATriggerBox* CardPlace, bool IsMainPlayer)
@@ -170,6 +197,16 @@ void ACard_GameStateBase::PlayCard_Spawn_Implementation(ACard_Info* CardInfo, AT
 	IsMainPlayer ? Player_1_Mana = Player_1_Mana - CardInfo -> Cost : Player_2_Mana = Player_2_Mana - CardInfo -> Cost;
 	ShapeManager -> RemoveFromHand(CardInfo, IsMainPlayer);
 	ShapeManager -> AddtoField(CardInfo, CardPlace);
+	EffectSolver -> InStack = true;
+	EffectSolver -> Primary = IsMainPlayer;
+	for (auto &i : CardInfo -> CardEffect)	//叫效果，UI取对象
+	{
+		if (i.EffectTimer == E_EffectTimer::OnUse)
+		{
+			LockUp = true;
+			WaitForEffect(CardInfo, i.EffectID, IsMainPlayer);
+		}
+	}
 }
 
 void ACard_GameStateBase::Attack_Implementation(ACard_Info* CardInfo, ACard_Info* TargetCardInfo, bool IsMainPlayer)
@@ -223,6 +260,33 @@ void ACard_GameStateBase::NextPhase_Implementation()
 	}
 }
 
+void ACard_GameStateBase::WaitForEffect_Implementation(ACard_Info* Source, int EffectID, bool IsMainPlayer)
+{
+	APlayerState* PS = IsMainPlayer ? PlayerArray[0] : PlayerArray[1];
+	Cast<ACard_PlayerController>(PS -> GetOwningController()) -> WaitForEffect_UMG(Source, EffectID);
+}
+
+void ACard_GameStateBase::WaitForEffectCallBack_Implementation(const TArray<ACard_Info*>& Targets, int EffectID)
+{
+	LockUp = false; //解锁
+	EffectSolver -> AddEffecttoStack(Targets, EffectID);
+	EffectSolver -> Primary = !EffectSolver -> Primary;
+	React(false);	//切换优先权
+	WaitForResponse(EffectSolver -> Primary);
+}
+
+void ACard_GameStateBase::WaitForResponse_Implementation(bool IsMainPlayer)
+{
+	APlayerState* PS = IsMainPlayer ? PlayerArray[0] : PlayerArray[1];
+	Cast<ACard_PlayerController>(PS -> GetOwningController()) -> WaitForResponse_UMG();
+}
+
+void ACard_GameStateBase::WaitForResponseCallBack_Implementation()
+{
+	EffectSolver -> SolveStack();
+	React(true);
+}
+
 void ACard_GameStateBase::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -235,4 +299,6 @@ void ACard_GameStateBase::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	DOREPLIFETIME(ACard_GameStateBase, Player_2_Time);
 	DOREPLIFETIME(ACard_GameStateBase, Player_2_Cards);
 	DOREPLIFETIME(ACard_GameStateBase, TurnCount);
+	DOREPLIFETIME(ACard_GameStateBase, Phase);
+	DOREPLIFETIME(ACard_GameStateBase, LockUp);
 };
